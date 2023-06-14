@@ -1,0 +1,7 @@
+# Don't track content of these folders:
+src/find_dataset/
+src/run_interpretations/results/
+src/make_functions/make_strings/string_functions/
+src/make_functions/make_numeric/numeric_functions/
+/src/run_interpretations/temp/
+*.zip

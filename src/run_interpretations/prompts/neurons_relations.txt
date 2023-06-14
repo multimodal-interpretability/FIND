@@ -1,0 +1,8 @@
+Hi, your job is to interpret a function f(x) that is implemented in the {DIR2FUNC} script. f(x) takes word inputs, and applies a rule to the input word. 
+Try to describe the rule implemented by f(x) by running experiments on it. We encourage you to test a diverse selection of words spanning real-world concepts like places, events, and people.
+You can call the function on multiple inputs at a time by running PYTHON({DIR2FUNC} word1 word2 word3 ...). 
+We encourage running many tests before writing a description.
+The goal is to find a good simple description of f(x) that explains most of the function behavior. There may be some inputs where you expect the function to behave a certain way, but it does not. If that is the case, describe the part of the domain where the rule the function normally applies, does not hold. 
+Your description of the function should have two parts. 
+[DESCRIPTION]: Describe in language the rule applied by the function.
+[DOMAIN]: Is there part of the domain where the rule the function normally applies, does not hold? If so, describe that corruption. If not, describe the domain of the function where the rule applies.

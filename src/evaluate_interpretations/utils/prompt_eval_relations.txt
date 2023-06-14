@@ -1,0 +1,9 @@
+Below is a textual description of a function f(x):
+DESC
+Which one of the following pairs of input-output strings are correct executions of f(x)?
+Example 1: input = IN0, output = OUT0
+Example 2: input = IN1, output = OUT1
+Example 3: input = IN2, output = OUT2
+Reply in the following format: 
+"[ANSWER]: <index>", where <index> represents the numerical value of the correct example.
+Only include the numerical index of the example.

@@ -1,0 +1,9 @@
+Below is a textual description of a function f(x), which is selective to a specific concept:
+DESC
+Which one of the following input examples will the function be most selective for? 
+Example 1: input = IN0
+Example 2: input = IN1
+Example 3: input = IN2
+Reply in the following format: 
+"[ANSWER]: <index>", where <index> represents the numerical value of the correct example.
+Only include the numerical index of the example.

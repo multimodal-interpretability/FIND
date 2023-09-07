@@ -11,6 +11,10 @@
 
 ### Unit-testing (for strings and synthetic neurons)
 
+Download the vicuna-evaluator model:
+```wget https://data.csail.mit.edu/FIND/vicuna_evaluator.zip```
+(the training data is available at ```wget https://data.csail.mit.edu/FIND/vicuna_evaluator_train_data.json```)
+
 For string functions:
 ```python unit_testing.py --func_category strings --prompt_path ./utils/prompt_eval_strings.txt```
 

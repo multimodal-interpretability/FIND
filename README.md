@@ -1,6 +1,6 @@
 # FIND: Function Interpretation Dataset
 **A Function Interpretation Benchmark for Evaluating Interpretability Methods (official implementation)** <br>
-### [Project Page (soon)]() | [Arxiv](https://arxiv.org/abs/2309.03886)
+### [Project Page](https://multimodal-interpretability.csail.mit.edu/FIND-benchmark/) | [Arxiv](https://arxiv.org/abs/2309.03886)
 
 [Sarah Schwettmannn](https://cogconfluence.com/)\*, [Tamar Rott Shaham](https://tamarott.github.io/)\*, [Joanna Materzynska](https://joaanna.github.io/), [Neil Chowdhury](https://nchowdhury.com/), [Shuang Li](https://people.csail.mit.edu/lishuang/), [Jacob Andreas](https://www.mit.edu/~jda/), [David Bau](https://baulab.info/), [Antonio Torralba](https://groups.csail.mit.edu/vision/torralbalab/). <br>
 \* equal contribution <br><br>

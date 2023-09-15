@@ -43,3 +43,10 @@ Run interpretations with search initialization:
 
 ## Define your own interpreter
 Open the `collect_interpretations.py` function and define your model according to the instructions.
+
+## FIND interpretations benchmark
+You can also download the full FIND interpretations benchmark and unzip it to `./src/run_interpretations/`:
+```bash
+wget -P ./src/run_interpretations https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+unzip ./src/run_interpretations/FIND-interpretations.zip -d ./src/run_interpretations/
+```

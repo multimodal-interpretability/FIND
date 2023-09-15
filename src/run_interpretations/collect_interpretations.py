@@ -11,14 +11,12 @@ from getpass import getpass
 import pandas as pd
 import os
 from tqdm import tqdm
-from IPython import embed
 import time
 from random import random, uniform
 import random as rd
 import torch.nn as nn
 import json
 import warnings
-# warnings.filterwarnings("ignore")
 import numpy as np
 from call_interpreter import ask_model
 rd.seed(0000)
@@ -33,12 +31,17 @@ parser.add_argument('--temp_function_path', type=str, default='./temp/', help='p
 parser.add_argument('--prompt_path', type=str, default='./prompts/numeric.txt', help='path to prompt to use')	
 parser.add_argument('--n_func', type=int, default=5, help='specify the amount of functions to run')	
 parser.add_argument('--vicuna_server', type=str, help='specify vicuna server address')	
-parser.add_argument('--llama_hf_path', type=str, help='specify vicuna server address')	
+parser.add_argument('--vicuna_server_module', type=str, help='specify vicuna server address for the backbone model')	
+parser.add_argument('--llama_hf_path', type=str, help='specify llama path')	
 parser.add_argument('--hints', action='store_true', help='add_search_initializations', default=False)
+parser.add_argument('--single_round', action='store_true', help='add_search_initializations', default=False)
 args = parser.parse_args()
 
 regx = [r"([A-Z]+\(((?:[^()\"']|(?:\"[^\"]*\")|(?:'[^']*')|\((?1)*\))*)\))",
         r'''(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b[^,]+)''']
+
+vicuna_server = args.vicuna_server
+vicuna_server_module = args.vicuna_server_module
 
 class SessionState:
     def __init__(self):
@@ -64,6 +67,12 @@ def formatTable(table):
         lines += '{} - {}\n'.format(table['GPT Commands'][x],table['GPT Explanations'][x])
     return(lines)
 
+def formatTable_CommandOnly(table):
+    lines = ''
+    for x, i in enumerate(table['GPT Commands']):
+        lines += '{} - {}\n'.format(table['GPT Commands'][x],table['GPT Explanations'][x])
+    return(lines)
+
 commandTable = pd.DataFrame({
     'GPT Commands': ['PYTHON(function.py)'],
     'GPT Explanations': ['Run a python script with the given file name. Use quotes for the filename argument. Do not use quotes in the function command itself.'],
@@ -72,27 +81,23 @@ commandTable = pd.DataFrame({
 
 # return the prompt according to the task
 def return_sysPrompt(model):
-    if model == 'gpt-4':
-        sysPrompt = 'You now have access to some commands to help complete the user\'s request. ' \
-            'You are able to access the user\'s machine with these commands. In every message you send, ' \
-            'include "COMMAND: " with your command at the end. Here is a list of commands with ' \
-            'explanations of how they are used:\n{}\n When you use a command, the user will respond ' \
-            'with "Response: " followed by the output of the commmand. Use this output to help the ' \
-        'user complete their request.'
+    if model in ['llama-2']:
+        sysPrompt = 'You now have the ability to execute commands to run external functions. ' \
+        'You are able to access the user\'s machine with these commands. In every message you send, ' \
+        'include "COMMAND: " with your command at the end. Here is a list of commands with ' \
+        'explanations of how they are used:\n{}\nWhen you use a command, the user will respond ' \
+        'with "Response: " followed by the output of the commmand. Use this output to help the ' \
+        'user complete their request. After you receive a task from the user, you must execute {} ' \
+        'to run the external function. You will then receive outputs from the external function to ' \
+        'analyze. You must only analyze outputs produced by the function when you run {}. Do not run ' \
+        'the function any other way. Do not analyze any other outputs besides the ones produced by running {}.'
     else:
         sysPrompt = 'You now have access to some commands to help complete the user\'s request. ' \
-        'You are able to access the user\'s machine with these commands, and to get the corresponding output from the user. ' \
-        'In every message you send, ' \
-        'include "COMMAND: " with your command at the end. ' \
-        'When you use a command, the user will respond ' \
-        'with "Response: " followed by the output of the commmand.' \
-        'Do not run anything yourself. Only state the command and wait for the user to provide its output. ' \
-        'Use this output to help the ' \
-        'user complete their request. ' \
-        'Here is a list of commands with ' \
-        'explanations of how they are used:\n{}\n ' \
-        '(Let the user provide the respones for your commands, do not estimate them yourself without feedback from the user).' \
-        # 'Do not run anything yourself. Only state the command. ' \   
+        'You are able to access the user\'s machine with these commands. In every message you send, ' \
+        'include "COMMAND: " with your command at the end. Here is a list of commands with ' \
+        'explanations of how they are used:\n{}\nWhen you use a command, the user will respond ' \
+        'with "Response: " followed by the output of the commmand. Use this output to help the ' \
+        'user complete their request.' 
     return sysPrompt
 
 def runCmd(flag,state):
@@ -101,12 +106,13 @@ def runCmd(flag,state):
             p = subprocess.Popen(state.command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             output, errors = p.communicate()
             state.prompt = 'Response: ' + output.decode("utf-8")
-            # print(output.decode("utf-8"))
-            if errors:
-                state.prompt += 'Error occurred, please try again (some of the input values might be undefined)'
+            # if errors:
+                # state.prompt += 'Error occurred, please try again (some of the input values might be undefined)'
                 # state.prompt += 'Errors: ' + errors.decode("utf-8")
         except subprocess.CalledProcessError as e:
-            state.prompt = 'Response: ' + e.output.decode("utf-8")
+            print('!!!ERROR!!!')
+            print(e)
+            # state.prompt = 'Response: ' + e.output.decode("utf-8")
     else:
         state.prompt = "Response: User rejected this command"
     followup(state)
@@ -118,13 +124,14 @@ def define_prompt(prompt_template,dir2func):
 def save_description(response, filepath):
     description = response.rsplit('[DESCRIPTION]: ')[-1]
     description = description.rsplit('[DOMAIN]: ')[0]
+    description = description.rsplit('[CODE]: ')[0]
     with open(filepath,'w') as f:
         f.write(description) 
     f.close()   
 
 def save_domain(response,filepath):
     domain = response.rsplit('[DOMAIN]: ')[-1]
-    domain = domain.rsplit('[CODE]:')[0]
+    domain = domain.rsplit('[CODE]: ')[0]
     with open(filepath,'w') as f:
         f.write(domain) 
     f.close()
@@ -158,7 +165,7 @@ def save_fullhistory(history,filepath):
     f.close()
 
 
-def interp_func(prompt,model,debug=False):
+def interp_func(prompt,model,debug=False, single_round=False):
     state = SessionState()
     sysPrompt = return_sysPrompt(model)
     round_count = 0
@@ -169,11 +176,17 @@ def interp_func(prompt,model,debug=False):
             if not state.followup:
                 state.prompt = prompt
             if (newSession or state.history == []) and (not state.followup):
-                state.history = [{'role': 'system', 'content': sysPrompt.format(formatTable(commandTable))}]
+                if 'llama' in model:
+                    state.history = [{'role': 'system', 'content': sysPrompt.format(formatTable(commandTable),formatTable_CommandOnly(commandTable),formatTable_CommandOnly(commandTable),formatTable_CommandOnly(commandTable))}]
+                else:
+                    state.history = [{'role': 'system', 'content': sysPrompt.format(formatTable(commandTable))}]
             else:
-                state.history[0] = {'role': 'system', 'content': sysPrompt.format(formatTable(commandTable))}
+                if 'llama' in model:
+                    state.history[0] = {'role': 'system', 'content': sysPrompt.format(formatTable(commandTable),formatTable_CommandOnly(commandTable),formatTable_CommandOnly(commandTable),formatTable_CommandOnly(commandTable))}
+                else:
+                    state.history[0] = {'role': 'system', 'content': sysPrompt.format(formatTable(commandTable))}
             state.followup = False 
-            response,state = ask_model(state.prompt, model, state)
+            response,state = ask_model(state.prompt, model, state, vicuna_server)
             if len(regex.findall(regx[0], response)) >= 1:
                 cmd = regex.findall(regx[0], response)[0][0]
                 pIndex = cmd.index('(')
@@ -218,7 +231,7 @@ def interp_func(prompt,model,debug=False):
                         else:
                             runCmd(1,state)
 
-        # round_count+=1
+        round_count+=1
                     
         if state.acceptreject:
             print('GPT is trying to run the following command: ' + state.command + '\nPlease accept or reject this request.')
@@ -230,27 +243,28 @@ def interp_func(prompt,model,debug=False):
                 state.acceptreject = False
                 runCmd(0,state)
 
-        if debug:
-            print(response)                
-            print(state.prompt)
             
-        if "[DESCRIPTION]" in response:
-            # print('')
+        if "[DESCRIPTION]" in response or (single_round and round_count==2):
+            if debug:
+                print(response)                
             return(response,state.history)  
 
-        if round_count>100:
-            raise Warning("Interpretation process exceeded 100 rounds")
-            return('','')    
+        if round_count>20:
+            # raise Warning("Interpretation process exceeded 100 rounds")
+            return('','')   
+
+        if debug:
+            print(response)                
+            print(state.prompt) 
         
-def copy_func(source,target,category,vicuna_server=None,llama_hf_path=None):
+def copy_func(source,target,category,vicuna_server_module=None,llama_hf_path=None):
     func_name = 'function_code.py'
     if 'numeric' in args.func_category:
         if os.path.exists(f'{source}/mlp_approx_model.pt'):
-            # os.system(f'rm {target}/mlp_approx_model.pt')
             os.system(f'scp {source}/mlp_approx_model.pt {target}/mlp_approx_model.pt')
     if ('neurons_entities' in category) or ('neurons_relations' in category):
         temp = open(f'{source}/{func_name}','r').read()
-        temp = temp.replace('{API_BASE}',f"'{vicuna_server}'")
+        temp = temp.replace('{API_BASE}',f"'{vicuna_server_module}'")
         temp = temp.replace('{LLAMA_PATH}',f"'{llama_hf_path}'")
         open(target+'/function.py','w').write(temp)
     else:
@@ -274,20 +288,28 @@ def main(args):
     remove_temp_folder(args.temp_function_path)
     os.makedirs(args.temp_function_path, exist_ok=True)
     for function in tqdm(os.listdir(args.function_path+args.func_category)): 
+        print(function)
         if count >= args.n_func: break
+        if not os.path.os.path.exists(os.path.join(args.function_path,args.func_category,function,'function_code.py')): continue
         path2save = os.path.join(args.dataset_path,args.model,args.func_category,function)
         if args.hints:
             path2save = os.path.join(args.dataset_path,args.model,args.func_category+'_hints',function)
+        if args.single_round:
+            path2save = os.path.join(args.dataset_path,args.model,args.func_category+'_single_round',function)
         if os.path.exists(path2save+'/description.txt'): continue
+        if os.path.isfile(path2save): continue
         
         os.makedirs(path2save, exist_ok=True)
         mlp_flag = False
         if 'numeric' in args.func_category:
             if int(function[1:]) < 150:
                 mlp_flag = True
-        copy_func(source=os.path.join(args.function_path,args.func_category,function),target=args.temp_function_path,category=args.func_category,vicuna_server=args.vicuna_server,llama_hf_path=args.llama_hf_path)
+        copy_func(source=os.path.join(args.function_path,args.func_category,function),target=args.temp_function_path,category=args.func_category,vicuna_server_module=args.vicuna_server_module,llama_hf_path=args.llama_hf_path)
         prompt = define_prompt(prompt_template,args.temp_function_path+'function.py')
         if args.hints:
+            initial = open(os.path.join(args.function_path,args.func_category,function,'initial.json'),'r').read()
+            prompt += f'\nWe advise you to start with the following words: {initial}'
+        if args.single_round:
             initial = open(os.path.join(args.function_path,args.func_category,function,'initial.json'),'r').read()
             prompt += f'\nWe advise you to start with the following words: {initial}'
         if mlp_flag:
@@ -297,17 +319,21 @@ def main(args):
             prompt = define_prompt(prompt_template_mlp,args.temp_function_path+'function.py')
         if args.debug:
             print(prompt)
+        interp_count = 0
         while True:
             try:
-                response,history = interp_func(prompt,args.model,args.debug)
+                interp_count+=1
+                response,history = interp_func(prompt,args.model,args.debug, args.single_round)
                 break
             except Exception as e:
                 print(e)
+                if interp_count>5:
+                    break
         save_fullhistory(history,path2save+'/history')
         save_description(response,path2save+'/description.txt')
         if ('numeric' in args.func_category) or ('neurons' in args.func_category):
             save_domain(response,path2save+'/domain.txt')
-        if 'numeric' in args.func_category:
+        if 'numeric' in args.func_category or ('strings' in args.func_category):
             save_code(response,path2save+'/code.py')
             if mlp_flag:
                 os.system(f'rm {args.temp_function_path}/mlp_approx_model.pt')

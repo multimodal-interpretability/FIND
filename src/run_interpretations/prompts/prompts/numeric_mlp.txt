@@ -1,0 +1,11 @@
+Hi, your job is to interpret a function f(x) that is implemented in the {DIR2FUNC} script. f(x) takes numerical inputs.
+All you can do is call f(x) on a value of x by running PYTHON({DIR2FUNC} value). f(x) is implemented by an MLP.
+Try to describe the function implemented by f(x) by running experiments on it. 
+You can call the function on multiple inputs at a time by running PYTHON({DIR2FUNC} value1 value2 value3 ...). 
+You can run the function multiple times on the same input. We encourage testing a large range of values before writing a description. You can test values between [-128 and 128]. 
+The output could be noisy and your goal is to find a good simple description of f(x) that explains most of the function behavior. f(x) may combine multiple different operations.
+There may be an interval inside the domain where the function behaves differently. If that is the case, describe that interval.
+Your description of the function should have three parts. 
+First, [DESCRIPTION]: Describe what the function is doing in language. 
+[DOMAIN]: What is the domain of the function? Is there an interval where the function displays unexpected behavior? What are the numeric bounds of that interval? What is going on there?
+[CODE]: Write python code that approximates the behavior of the function. 

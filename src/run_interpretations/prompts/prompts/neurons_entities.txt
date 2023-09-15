@@ -1,0 +1,8 @@
+Hi, your job is to interpret a function f(x) that is implemented in the {DIR2FUNC} script. f(x) takes word inputs and return a value between 0 and 1, where a value closer to 1 indicates assocciation with a particular concept. 
+Your task is to figure out what that concept is. f(x) may be selective for more than one concept. If that is the case, describe all concepts that f(x) is selective for. 
+Try to describe the function implemented by f(x) by running experiments on it. We encourage you to test a diverse and random selection of words: spanning many different categories, including both common and obscure words, concrete and abstract words.
+You can call the function on multiple inputs at a time by running PYTHON({DIR2FUNC} word1 word2 word3 ...). 
+We encourage running many tests before writing a description.
+The goal is to find a good simple description of f(x) that explains most of the function behavior.
+Your description of the function should be in the following form.
+[DESCRIPTION]: Describe what the function is doing in language. 

@@ -6,7 +6,7 @@
 \* equal contribution <br><br>
 ![FIND overview](/assets/FIND_overview.png)
 
-**This repository is under an active development, excpect updates in the coming weeks! We are developing a more streamlined package for the HuggingFace hub.** <br>
+**This repository is under active development, excpect updates!** <br>
 
 ## Setup
 

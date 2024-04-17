@@ -6,7 +6,7 @@
 \* equal contribution <br><br>
 ![FIND overview](/assets/FIND_overview.png)
 
-**This repository is under active development, excpect updates!** <br>
+**This repository is under active development, expect updates!** <br>
 
 ## Setup
 

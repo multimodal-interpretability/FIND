@@ -1,4 +1,4 @@
-# FIND: Function Interpretation Dataset
+# FIND: Function Interpretation and Description Benchmark
 **A Function Interpretation Benchmark for Evaluating Interpretability Methods (official implementation)** <br>
 ### [Project Page](https://multimodal-interpretability.csail.mit.edu/FIND-benchmark/) | [Arxiv](https://arxiv.org/abs/2309.03886)
 
